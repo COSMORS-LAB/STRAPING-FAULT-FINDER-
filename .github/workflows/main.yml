@@ -1,0 +1,39 @@
+name: Build AMNS Fault Finder APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Android project ZIP
+        run: |
+          unzip -o AMNS_Fault_Finder_ENGLISH_v2.zip -d extracted
+          find extracted -type f -name gradlew -exec dirname {} \; > project_path.txt
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build APK
+        run: |
+          PROJECT_DIR=$(dirname "$(find extracted -type f -name settings.gradle -o -name settings.gradle.kts | head -n 1)")
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AMNS-Fault-Finder-APK
+          path: extracted/**/app/build/outputs/apk/debug/*.apk
